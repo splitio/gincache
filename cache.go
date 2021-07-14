@@ -1,4 +1,4 @@
-package main
+package gincache
 
 import (
 	"sync"
@@ -13,6 +13,7 @@ type cacheEntry struct {
 }
 
 type cache interface {
+	evictAll()
 	evict(entry string)
 	trySet(entry string, status int, value []byte, headers responseHeaders) bool
 	forceSet(entry string, status int, value []byte, headers responseHeaders)
@@ -26,6 +27,12 @@ type mtxCache struct {
 
 func newMtxCache() *mtxCache {
 	return &mtxCache{data: make(map[string]cacheEntry)}
+}
+
+func (c *mtxCache) evictAll() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.data = make(map[string]cacheEntry)
 }
 
 func (c *mtxCache) evict(entry string) {

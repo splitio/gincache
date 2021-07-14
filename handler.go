@@ -1,8 +1,6 @@
-package main
+package gincache
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +19,6 @@ func New(keyFactory func(ctx *gin.Context) string) *Middleware {
 func (h *Middleware) Handle(ctx *gin.Context) {
 	entry := h.keyFactory(ctx)
 	if status, response, headers := h.requestCache.get(entry); response != nil {
-		fmt.Println("FROM CACHE: ", string(response))
 		for k := range headers {
 			ctx.Writer.Header().Add(k, headers[k])
 		}
@@ -48,4 +45,14 @@ func (h *Middleware) Handle(ctx *gin.Context) {
 
 	// call the rest of the middleware chain
 	ctx.Next()
+}
+
+// EvictAll clears all the cahed entries
+func (h *Middleware) EvictAll() {
+	h.requestCache.evictAll()
+}
+
+// Evict a single entry
+func (h *Middleware) Evict(key string) {
+	h.requestCache.evict(key)
 }
