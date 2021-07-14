@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +18,6 @@ func New(keyFactory func(ctx *gin.Context) string) *Middleware {
 // Handle is the function that should be passed to your router's `.Use()` method
 func (h *Middleware) Handle(ctx *gin.Context) {
 	entry := h.keyFactory(ctx)
-	fmt.Println("Entry: ", entry)
 	if status, response, headers := h.requestCache.get(entry); response != nil {
 		for k := range headers {
 			ctx.Writer.Header().Add(k, headers[k])
