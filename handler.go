@@ -84,8 +84,8 @@ func (h *Middleware) Handle(ctx *gin.Context) {
 
 	sticky := ctx.GetBool(StickyEntry)
 
-	go h.requestCache.trySet(entry, surrogates, withCacheWriter.statusCode, withCacheWriter.body.Bytes(), headers, sticky)
 	withCacheWriter.writeResponse()
+	h.requestCache.trySet(entry, surrogates, withCacheWriter.statusCode, withCacheWriter.body.Bytes(), headers, sticky)
 
 }
 
