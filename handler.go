@@ -84,8 +84,11 @@ func (h *Middleware) Handle(ctx *gin.Context) {
 
 	sticky := ctx.GetBool(StickyEntry)
 
+	// keep a copy of the body for storing in cache
+	forCache := make([]byte, len(withCacheWriter.body.Bytes()))
+	copy(forCache, withCacheWriter.body.Bytes())
 	withCacheWriter.writeResponse()
-	h.requestCache.trySet(entry, surrogates, withCacheWriter.statusCode, withCacheWriter.body.Bytes(), headers, sticky)
+	h.requestCache.trySet(entry, surrogates, withCacheWriter.statusCode, forCache, headers, sticky)
 
 }
 
