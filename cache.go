@@ -80,12 +80,13 @@ func (c *mtxCache) evictAll() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.data = make(map[string]cacheEntry)
+	c.surrogates = make(map[string]map[string]struct{})
 }
 
 func (c *mtxCache) evict(entry string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	delete(c.data, entry)
+	c.removeEntry(entry)
 }
 
 func (c *mtxCache) evictBySurrogate(key string) {
@@ -94,23 +95,7 @@ func (c *mtxCache) evictBySurrogate(key string) {
 
 	entries, _ := c.surrogates[key]
 	for entry := range entries {
-		current, ok := c.data[entry]
-
-		// We need to iterate through all surrogate keys that point to these entry and remove it from them,
-		// otherwise if another key with the same name is added, it could be incorrectly flushed
-		var referencingSurrogates []string
-		if ok {
-			referencingSurrogates = current.surrogates
-		}
-		delete(c.data, entry)
-
-		for _, referrer := range referencingSurrogates {
-			surrogate, ok := c.surrogates[referrer]
-			if ok {
-				delete(surrogate, referrer)
-				c.surrogates[referrer] = surrogate
-			}
-		}
+		c.removeEntry(entry)
 	}
 
 	// after deleting all the entries associated to the surrogate key, we also delete the surrogate
@@ -138,6 +123,9 @@ func (c *mtxCache) forceSet(key string, surrogates []string, status int, value [
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	// try to remove it properly in case it's cached
+	c.removeEntry(key)
+
 	if len(c.data) >= c.max {
 		c.makeRoom()
 	}
@@ -157,6 +145,32 @@ func (c *mtxCache) get(key string) (status int, body []byte, headers responseHea
 
 // -- internal
 
+func (c *mtxCache) removeEntry(key string) {
+	current, ok := c.data[key]
+	if !ok {
+		return
+	}
+
+	// We need to iterate through all surrogate keys that point to these entry and remove it from them,
+	// otherwise if another key with the same name is added, it could be incorrectly flushed
+	referencingSurrogates := current.surrogates
+	delete(c.data, key)
+
+	for _, referrer := range referencingSurrogates {
+		references, ok := c.surrogates[referrer]
+		if ok {
+			if len(references) == 1 {
+				// If the key is referenced by the surrogate, and it's the only one referenced by such,
+				// then we can just delete the surrogate
+				delete(c.surrogates, referrer)
+				continue
+			}
+			delete(references, key)
+			c.surrogates[referrer] = references
+		}
+	}
+}
+
 func (c *mtxCache) updateSurrogates(key string, surrogates []string) {
 	for _, s := range surrogates {
 		current, ok := c.surrogates[s]
@@ -173,13 +187,13 @@ func (c *mtxCache) makeRoom() {
 		if c.data[k].sticky {
 			continue
 		}
-		delete(c.data, k)
+		c.removeEntry(k)
 		return
 	}
 
-	// we did not find a non-sticky entry. delete any. BTW, this is unlikely and mostly bugged
+	// we did not find a non-sticky entry. delete any. BTW, this is unlikely and if it happens, somethings's most likely bugged
 	for k := range c.data {
-		delete(c.data, k)
+		c.removeEntry(k)
 		return
 	}
 
