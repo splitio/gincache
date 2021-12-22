@@ -4,6 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var headersToIgnore map[string]struct{} = map[string]struct{}{
+	"Access-Control-Allow-Credentials": struct{}{},
+	"Access-Control-Expose-Headers":    struct{}{},
+	"Access-Control-Allow-Origin":      struct{}{},
+	"Vary":                             struct{}{},
+}
+
 // StickyEntry is the name of the context key to be set when we want an entry to be sticky
 // `sticky` entries are not purged when the cache is full. Only when we forcefully evict them
 const StickyEntry = "c_sticky"
@@ -49,9 +56,17 @@ func New(options *Options) *Middleware {
 
 // Handle is the function that should be passed to your router's `.Use()` method
 func (h *Middleware) Handle(ctx *gin.Context) {
+
+	if ctx.Request.Method == "OPTIONS" {
+		return
+	}
+
 	entry := h.keyFactory(ctx)
 	if status, response, headers := h.requestCache.get(entry); response != nil {
 		for k := range headers {
+			if _, shouldIgnore := headersToIgnore[k]; shouldIgnore {
+				continue
+			}
 			ctx.Writer.Header().Add(k, headers[k])
 		}
 		ctx.Writer.WriteHeader(status)
