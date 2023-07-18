@@ -15,7 +15,7 @@ This utility is compatible with Go 1.18.
 
 ## Submitting issues
 
-The Split team monitors all issues submitted to this [issue tracker](https://github.com/splitio/go-client/issues). We encourage you to use this issue tracker to submit any bug reports, feedback, and feature enhancements. We'll do our best to respond in a timely manner.
+The Split team monitors all issues submitted to this [issue tracker](https://github.com/splitio/gincache/issues). We encourage you to use this issue tracker to submit any bug reports, feedback, and feature enhancements. We'll do our best to respond in a timely manner.
 
 ## Contributing
 
