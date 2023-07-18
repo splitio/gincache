@@ -1,4 +1,4 @@
-module github.com/splitio/gincache/v1
+module github.com/splitio/gincache
 
 go 1.18
 
