@@ -1,6 +1,10 @@
-module github.com/splitio/gincache/v1
+module github.com/splitio/gincache
 
 go 1.18
+
+retract (
+    v1.0.0 // Published accidentally.
+)
 
 require github.com/gin-gonic/gin v1.9.1
 
