@@ -9,7 +9,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  test:
+  license:
+    name: Update license
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

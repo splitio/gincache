@@ -1,24 +1,28 @@
 name: ci
+
 on:
   push:
-    branches-ignore:
-      - none
-  pull_request:
-    branches-ignore:
-      - none
+    branches:
+      - main
+  pull_request_target:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.run_number || github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Set up Go version
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.18.0'
@@ -29,8 +33,7 @@ jobs:
       - name: Execute tests
         run: go test -coverprofile=coverage.out -count=1 ./...
 
-      - name: SonarQube Scan (Push)
-        if: ${{ github.event_name == 'push' }}
+      - name: SonarQube Scan
         uses: SonarSource/sonarcloud-github-action@v1.9.1
         env:
           SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
@@ -39,17 +42,3 @@ jobs:
           projectBaseDir: .
           args: >
             -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }}
-
-      - name: SonarQube Scan (Pull Request)
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: SonarSource/sonarcloud-github-action@v1.9.1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }}
-            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
-            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
-            -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }}
