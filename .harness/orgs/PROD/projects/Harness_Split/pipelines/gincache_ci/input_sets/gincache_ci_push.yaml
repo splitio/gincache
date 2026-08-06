@@ -1,0 +1,14 @@
+inputSet:
+  name: gincache_ci_push
+  identifier: gincache_ci_push
+  orgIdentifier: PROD
+  projectIdentifier: Harness_Split
+  pipeline:
+    identifier: gincache_ci
+    properties:
+      ci:
+        codebase:
+          build:
+            type: branch
+            spec:
+              branch: <+trigger.branch>

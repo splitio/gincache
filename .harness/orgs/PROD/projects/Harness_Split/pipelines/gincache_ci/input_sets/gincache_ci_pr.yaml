@@ -1,0 +1,14 @@
+inputSet:
+  name: gincache_ci_pr
+  identifier: gincache_ci_pr
+  orgIdentifier: PROD
+  projectIdentifier: Harness_Split
+  pipeline:
+    identifier: gincache_ci
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
